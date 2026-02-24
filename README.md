@@ -1,30 +1,25 @@
+📄 RFP Chatbot
 An interactive Streamlit-based chatbot for querying and summarizing PDF documents (like RFPs).
 Powered by Qwen2.5-7B, LangChain, and FAISS, this app lets you upload a PDF, process it into searchable chunks, and ask natural language questions with concise summaries.
 
-Features:
-1-PDF Upload & Processing: Upload RFPs or other documents, automatically chunked and indexed with FAISS.
+🗂️ Project Structure
 
-2-Conversational Q&A: Ask questions in natural language, get answers grounded in the document.
+File / Folder	Role
+app.py	Streamlit UI
+ingest.py	PDF ingestion → FAISS index
+bot.py	Retrieval, LLM, summarization
+.env	HuggingFace API token
+faiss_index/	Auto-created FAISS index
+uploads/	Uploaded PDFs
 
-3-Summarization: Generate concise bullet-point summaries of answers.
+🚀 Features
 
-4-Modern UI: Custom dark-themed Streamlit interface with styled chat bubbles, summaries, and source cards.
+PDF Upload & Processing: Upload RFPs or other documents, automatically chunked and indexed with FAISS.
 
-5-Tech Stack Transparency: Sidebar shows the underlying components used 
+Conversational Q&A: Ask questions in natural language, get answers grounded in the document.
 
-Tech Stack:
-1-Streamlit — UI framework
+Summarization: Generate concise bullet-point summaries of answers.
 
-2-LangChain — Orchestration framework
+Modern UI: Custom dark-themed Streamlit interface with styled chat bubbles, summaries, and source cards.
 
-3-PyPDFLoader — PDF parsing
-
-4-RecursiveCharacterTextSplitter — Chunking strategy
-
-5-all-MiniLM-L6-v2 — Embedding model
-
-6-FAISS — Vector database
-
-7-Qwen2.5-7B-Instruct — LLM for answering and summarization
-
-8-HuggingFace Hub — Model hosting
+Tech Stack Transparency: Sidebar shows the underlying components used.
