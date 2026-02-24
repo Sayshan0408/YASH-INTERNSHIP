@@ -4,7 +4,7 @@ Powered by Qwen2.5-7B, LangChain, and FAISS, this app lets you upload a PDF, pro
 
 ## 🗂️ Project Structure
 
-File / Folder	Role
+File / Folder	Role  
 app.py	Streamlit UI
 ingest.py	PDF ingestion → FAISS index
 bot.py	Retrieval, LLM, summarization
