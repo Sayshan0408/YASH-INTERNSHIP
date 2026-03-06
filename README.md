@@ -1,11 +1,11 @@
-🎓 CampusAI Navigator
+## 🎓 CampusAI Navigator
 
 AI-powered campus assistant for college students
 Groq · Llama 3.3 70B · ReAct Agent · Semantic Chunking · Streamlit
 📌 What Is This?
 CampusAI Navigator is a conversational AI assistant built for college students. Ask anything about faculty, events, clubs, internships, resources, and more. It uses a ReAct (Reasoning + Acting) agent loop to search the web, fetch and semantically chunk pages, and deliver cited, structured answers — all powered by Llama 3.3 70B on Groq.
 
-🔄 How It Works
+## 🔄 How It Works
 User Query
     │
     ▼
@@ -28,10 +28,10 @@ ReAct Agent Loop (max 5 iterations)
 Streamlit UI
 (chat bubbles · source pills · ReAct trace expander)
 
-🎯 Focus Modes
+## 🎯 Focus Modes
 ModeContext🎓 GeneralClubs, administration, campus life🎉 EventsHackathons, fests, seminars, workshops👩‍🏫 FacultyProfessors, research, office hours, contacts📚 ResourcesLibraries, labs, scholarships, mental health💼 InternshipsPlacements, recruiters, career tips
 
-🔍 Search Modes
+## 🔍 Search Modes
 ModeAlgorithmBest For🔑 KeywordToken overlap scoringNames, codes, exact terms🧠 SemanticTF-IDF cosine similarityTopics, themes, concepts⚡ Hybrid (default)50% keyword + 50% semanticGeneral use
 
 🧩 Key Components
@@ -44,21 +44,11 @@ The core ReAct loop — calls Groq, parses <thought>, <action>, <final_answer> t
 parse_tags(text) + parse_action(s)
 Zero-dependency regex tag parser — no function-calling APIs needed. Works entirely on raw model text output.
 
-⚙️ Sampling Parameters
+## ⚙️ Sampling Parameters
 PhaseTemperatureTop-pReAct reasoning0.20.9Final answer0.70.9
 Top-k chunks per fetch: 4 · Max iterations: 5 · Max tokens: 4096
 
-🚀 Quick Start
-bashgit clone https://github.com/your-username/campusai-navigator.git
-cd campusai-navigator
-pip install -r requirements.txt
-Add your Groq API key:
-bashecho "GROQ_API_KEY=gsk_your_key_here" > .env
-Run:
-bashstreamlit run app.py
-Get a free Groq key at 👉 console.groq.com/keys
-
-📦 Requirements
+## 📦 Requirements
 streamlit
 requests
 beautifulsoup4
