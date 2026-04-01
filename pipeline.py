@@ -12,7 +12,7 @@ Flow:
 """
 
 import time
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Tuple
 
 from groq import Groq
 
@@ -26,6 +26,7 @@ from agents.config import (
 from agents.prompts import SYSTEM_PROMPTS
 from guardrails.guardrails import validate_input, validate_output, sanitize_output
 from core.history import save_run
+from core.accuracy import compute_pipeline_accuracy, overall_pipeline_score, AgentScore
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ def run_full_pipeline(
     on_stage_start: Optional[Callable[[str], None]] = None,
     on_stage_done: Optional[Callable[[str, str], None]] = None,
     on_guardrail_block: Optional[Callable[[str, str], None]] = None,
-) -> Dict[str, str]:
+) -> Tuple[Dict[str, str], Dict[str, AgentScore]]:
     """
     Run all 6 agents in sequence.
 
@@ -82,8 +83,10 @@ def run_full_pipeline(
       on_stage_done(stage, output)   — called after an agent finishes
       on_guardrail_block(stage, msg) — called when a guardrail blocks
 
-    Returns dict of { stage_name: output_text }.
-    Returns empty dict if input guardrail blocks.
+    Returns (outputs, accuracy_scores):
+      outputs         — dict of { stage_name: output_text }
+      accuracy_scores — dict of { stage_name: AgentScore }
+    Both are empty dicts if input guardrail blocks.
     """
 
     # ── Layer 1: Input guardrail ───────────────────────────────────────────
@@ -91,10 +94,11 @@ def run_full_pipeline(
     if not input_check.passed:
         if on_guardrail_block:
             on_guardrail_block("input", input_check.reason)
-        return {}
+        return {}, {}
 
     outputs: Dict[str, str] = {}
     context = f"## User Requirement\n\n{requirement.strip()}\n"
+    review_iterations = 1  # track how many dev<->review loops ran
 
     for stage in STAGE_ORDER:
 
@@ -157,7 +161,10 @@ def run_full_pipeline(
 
                 # Exit loop early if reviewer approves
                 if REVIEW_PASS_KEYWORD in rev_output:
+                    review_iterations = iteration
                     break
+
+                review_iterations = iteration
 
                 # Feed reviewer feedback back into developer context
                 dev_context = (
@@ -220,8 +227,12 @@ def run_full_pipeline(
         label = AGENT_META[stage]["label"]
         context += f"\n\n## {label} Output\n\n{output}"
 
+    # ── Compute accuracy scores ────────────────────────────────────────────
+    accuracy_scores = compute_pipeline_accuracy(outputs, review_iterations)
+    pipeline_score  = overall_pipeline_score(accuracy_scores)
+
     # ── Persist to history ─────────────────────────────────────────────────
     status = "success" if len(outputs) == len(STAGE_ORDER) else "partial"
     save_run(requirement, outputs, status=status)
 
-    return outputs
+    return outputs, accuracy_scores
