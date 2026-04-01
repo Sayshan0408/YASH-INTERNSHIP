@@ -7,8 +7,7 @@ Powered by Groq (llama-3.1-8b-instant).
 import streamlit as st
 
 from agents.config import STAGE_ORDER, AGENT_META
-from core.pipeline import run_full_pipeline
-from core.accuracy import overall_pipeline_score
+from core.pipeline import run_full_pipeline, overall_pipeline_score
 from core.history import (
     list_runs,
     search_runs,
@@ -88,7 +87,7 @@ hr { border-color: #30363d !important; }
 if "loaded_run_id"    not in st.session_state: st.session_state["loaded_run_id"]    = None
 if "pipeline_outputs" not in st.session_state: st.session_state["pipeline_outputs"] = {}
 if "guardrail_msgs"   not in st.session_state: st.session_state["guardrail_msgs"]   = []
-if "accuracy_scores"  not in st.session_state: st.session_state["accuracy_scores"]  = {}
+if "accuracy_scores"  not in st.session_state: st.session_state["accuracy_scores"]  = []
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -208,7 +207,7 @@ with col_clear:
         st.session_state["loaded_run_id"]    = None
         st.session_state["pipeline_outputs"] = {}
         st.session_state["guardrail_msgs"]   = []
-        st.session_state["accuracy_scores"]  = {}
+        st.session_state["accuracy_scores"]  = []
         st.rerun()
 
 if not api_key:
@@ -239,54 +238,45 @@ if run_btn and requirement.strip() and api_key:
     st.session_state["loaded_run_id"]    = None
     st.session_state["pipeline_outputs"] = {}
     st.session_state["guardrail_msgs"]   = []
+    st.session_state["accuracy_scores"]  = []
 
     st.markdown("---")
-    progress_bar  = st.progress(0, text="Starting pipeline…")
-    status_box    = st.empty()
-    stage_slots   = {stage: st.empty() for stage in STAGE_ORDER}
-    total         = len(STAGE_ORDER)
-    completed     = [0]
-
-    def on_start(stage: str) -> None:
-        m = AGENT_META[stage]
-        stage_slots[stage].markdown(
-            f'<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;margin-bottom:10px">'
-            f'<span style="font-size:20px">{m["icon"]}</span> '
-            f'<b style="color:#e6edf3">{m["label"]}</b> '
-            f'<span class="badge badge-running">⏳ Running…</span>'
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-        status_box.info(f"Running **{m['label']}**…")
+    progress_bar = st.progress(0, text="Starting pipeline…")
+    status_box   = st.empty()
+    stage_slots  = {stage: st.empty() for stage in STAGE_ORDER}
+    total        = len(STAGE_ORDER)
+    completed    = [0]
 
     def on_done(stage: str, output: str) -> None:
+        """Called by pipeline after each agent finishes."""
         st.session_state["pipeline_outputs"][stage] = output
-        stage_slots[stage].empty()
+        m = AGENT_META.get(stage, {"icon": "🤖", "label": stage.capitalize()})
+        stage_slots[stage].markdown(
+            f'<div style="background:#0d2818;border:1px solid #2ea043;border-radius:10px;'
+            f'padding:14px;margin-bottom:8px">'
+            f'<span style="font-size:18px">{m["icon"]}</span> '
+            f'<b style="color:#3fb950">{m["label"]}</b> '
+            f'<span class="badge" style="background:#0d2818;color:#3fb950">✅ Done</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
         completed[0] += 1
         pct = min(100, int((completed[0] / total) * 100))
         progress_bar.progress(pct, text=f"Completed {completed[0]}/{total} agents…")
+        status_box.info(f"✅ **{m['label']}** finished — running next agent…")
 
-    def on_blocked(stage: str, reason: str) -> None:
-        st.session_state["guardrail_msgs"].append((stage, reason))
-        m = AGENT_META.get(stage, {"icon": "🚫", "label": stage.capitalize()})
-        slot = stage_slots.get(stage, st.empty())
-        slot.markdown(
-            f'<div style="background:#1a0000;border:1px solid #f85149;border-radius:10px;padding:16px;margin-bottom:10px">'
-            f'<span style="font-size:20px">{m["icon"]}</span> '
-            f'<b style="color:#f85149">{m["label"]}</b> '
-            f'<span class="badge badge-blocked">🚫 Blocked</span><br>'
-            f'<span style="color:#f85149;font-size:13px">{reason}</span>'
-            f"</div>",
-            unsafe_allow_html=True,
+    try:
+        outputs, accuracy_scores = run_full_pipeline(
+            requirement=requirement,
+            api_key=api_key,
+            on_stage_done=on_done,
         )
-
-    outputs, accuracy_scores = run_full_pipeline(
-        requirement=requirement,
-        api_key=api_key,
-        on_stage_start=on_start,
-        on_stage_done=on_done,
-        on_guardrail_block=on_blocked,
-    )
+    except ValueError as e:
+        # Input blocked by guardrails
+        progress_bar.empty()
+        status_box.empty()
+        st.error(f"🚫 {e}")
+        outputs, accuracy_scores = {}, []
 
     st.session_state["accuracy_scores"] = accuracy_scores
 
@@ -303,44 +293,47 @@ if run_btn and requirement.strip() and api_key:
 
         # ── Accuracy Dashboard ─────────────────────────────────────────────
         if accuracy_scores:
-            pipeline_score = overall_pipeline_score(accuracy_scores)
-            grade_color = {"A": "#2ea043", "B": "#58a6ff", "C": "#f0b429", "D": "#f97316", "F": "#f85149"}
+            overall_score, overall_grade = overall_pipeline_score(accuracy_scores)
+
+            grade_color = {
+                "A": "#2ea043",
+                "B": "#58a6ff",
+                "C": "#f0b429",
+                "D": "#f97316",
+                "F": "#f85149",
+            }
 
             st.markdown("---")
             st.markdown("## 📊 Pipeline Accuracy Report")
 
             # Overall score banner
-            overall_scores = [s.score for s in accuracy_scores.values()]
-            avg = pipeline_score
-            grade = "A" if avg >= 90 else "B" if avg >= 75 else "C" if avg >= 60 else "D" if avg >= 40 else "F"
-            color = grade_color.get(grade, "#888")
-
+            color = grade_color.get(overall_grade, "#888")
             st.markdown(
                 f'<div style="background:#161b22;border:2px solid {color};border-radius:14px;'
                 f'padding:20px 28px;margin-bottom:18px;display:flex;align-items:center;gap:24px">'
-                f'<div style="font-size:48px;font-weight:800;color:{color}">{avg:.0f}</div>'
+                f'<div style="font-size:48px;font-weight:800;color:{color}">{overall_score:.0f}</div>'
                 f'<div>'
                 f'<div style="font-size:22px;font-weight:700;color:#e6edf3">Overall Pipeline Score</div>'
                 f'<div style="font-size:14px;color:#8b949e">'
-                f'Grade <b style="color:{color}">{grade}</b> · '
+                f'Grade <b style="color:{color}">{overall_grade}</b> · '
                 f'{len(accuracy_scores)}/6 agents scored · '
-                f'{"Excellent quality 🎉" if avg >= 90 else "Good quality ✅" if avg >= 75 else "Needs improvement ⚠️" if avg >= 60 else "Poor quality ❌"}'
+                f'{"Excellent quality 🎉" if overall_score >= 90 else "Good quality ✅" if overall_score >= 75 else "Needs improvement ⚠️" if overall_score >= 60 else "Poor quality ❌"}'
                 f'</div></div></div>',
                 unsafe_allow_html=True,
             )
 
             # Per-agent score cards
             agent_cols = st.columns(len(accuracy_scores))
-            for idx, (stage, score_obj) in enumerate(accuracy_scores.items()):
-                m = AGENT_META.get(stage, {"icon": "🤖", "label": stage.capitalize()})
+            for idx, score_obj in enumerate(accuracy_scores):
+                m = AGENT_META.get(score_obj.agent, {"icon": "🤖", "label": score_obj.agent.capitalize()})
                 c = grade_color.get(score_obj.grade, "#888")
                 with agent_cols[idx]:
                     st.markdown(
                         f'<div style="background:#161b22;border:1px solid {c};border-radius:10px;'
                         f'padding:12px 10px;text-align:center">'
                         f'<div style="font-size:22px">{m["icon"]}</div>'
-                        f'<div style="font-size:11px;color:#8b949e;font-weight:700;text-transform:uppercase;margin:4px 0">'
-                        f'{m["label"]}</div>'
+                        f'<div style="font-size:11px;color:#8b949e;font-weight:700;'
+                        f'text-transform:uppercase;margin:4px 0">{m["label"]}</div>'
                         f'<div style="font-size:28px;font-weight:800;color:{c}">{score_obj.score:.0f}</div>'
                         f'<div style="font-size:13px;color:{c};font-weight:700">Grade {score_obj.grade}</div>'
                         f'</div>',
@@ -350,25 +343,29 @@ if run_btn and requirement.strip() and api_key:
             st.markdown("")
 
             # Detailed breakdown per agent
-            for stage, score_obj in accuracy_scores.items():
-                m = AGENT_META.get(stage, {"icon": "🤖", "label": stage.capitalize()})
+            for score_obj in accuracy_scores:
+                m = AGENT_META.get(score_obj.agent, {"icon": "🤖", "label": score_obj.agent.capitalize()})
                 c = grade_color.get(score_obj.grade, "#888")
                 with st.expander(
-                    f"{m['icon']} {m['label']} — {score_obj.score:.0f}/100 (Grade {score_obj.grade})  ·  {score_obj.summary}",
-                    expanded=False
+                    f"{m['icon']} {m['label']} — {score_obj.score:.0f}/100  (Grade {score_obj.grade})",
+                    expanded=False,
                 ):
-                    for check_name, passed, detail in score_obj.checks:
-                        icon = "✅" if passed else "❌"
+                    for chk in score_obj.checks:
+                        icon  = "✅" if chk["passed"] else "❌"
+                        label = chk["label"]
+                        reason = chk.get("reason", "")
                         st.markdown(
-                            f'<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid #21262d">'
+                            f'<div style="display:flex;gap:10px;padding:6px 0;'
+                            f'border-bottom:1px solid #21262d">'
                             f'<span style="font-size:16px">{icon}</span>'
                             f'<div>'
-                            f'<span style="color:#e6edf3;font-size:13px;font-weight:600">{check_name}</span><br>'
-                            f'<span style="color:#8b949e;font-size:12px">{detail}</span>'
-                            f'</div></div>',
+                            f'<span style="color:#e6edf3;font-size:13px;font-weight:600">{label}</span>'
+                            + (f'<br><span style="color:#8b949e;font-size:12px">{reason}</span>' if reason else "")
+                            + f'</div></div>',
                             unsafe_allow_html=True,
                         )
 
+        # ── Agent Outputs ──────────────────────────────────────────────────
         st.markdown("---")
         st.markdown("## 📄 Agent Outputs")
         for stage in STAGE_ORDER:
