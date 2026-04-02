@@ -1,0 +1,68 @@
+AVIATION INCIDENT REPORT
+========================
+Report ID     : AIR-2025-04-IN-00342
+Date Filed    : April 2, 2025
+Filed By      : Captain Rajesh Kumar, License No. DGCA-CPL-44821
+
+FLIGHT DETAILS
+--------------
+Flight Number : AI-405
+Aircraft Type : Boeing 737-800
+Registration  : VT-ANQ
+Operator      : Air India
+Route         : Delhi (VIDP) to Mumbai (VABB)
+Date          : April 2, 2025
+Departure Time: 14:35 IST (09:05 UTC)
+Incident Time : 15:12 IST (09:42 UTC)
+
+INCIDENT DESCRIPTION
+--------------------
+During cruise at FL350 (35,000 feet), the aircraft experienced severe
+turbulence over the Rajasthan region at coordinates 26.5N 74.2E.
+The autopilot disconnected automatically. Airspeed at time of incident
+was 480 knots. The aircraft lost 800 feet of altitude within 12 seconds.
+
+WEATHER CONDITIONS
+------------------
+Visibility    : 10km
+Wind          : 340 degrees at 45 knots at cruise altitude
+Cloud cover   : CB clouds at FL320 to FL380
+Turbulence    : Severe Clear Air Turbulence (CAT)
+OAT           : -52 degrees Celsius at FL350
+
+CREW ACTIONS TAKEN
+------------------
+1. Captain disengaged autopilot and took manual control
+2. Co-pilot issued MAYDAY call on frequency 121.5 MHz
+3. Seat belt signs activated immediately
+4. Speed reduced to 320 knots
+5. Descent initiated to FL280 to exit turbulence zone
+6. ATC Delhi notified, diverted to Jaipur Airport (VIJP)
+7. Emergency landing completed at 15:48 IST
+
+INJURIES
+--------
+Passengers injured : 3 (minor injuries - bruising, one sprained wrist)
+Crew injured       : 0
+Fatalities         : 0
+Total on board     : 189 passengers, 6 crew members
+
+DAMAGE ASSESSMENT
+-----------------
+Aircraft damage    : Minor - overhead bin latches broken (4 units)
+Structural damage  : None
+Aircraft status    : Serviceable after inspection
+
+CAUSE OF INCIDENT
+-----------------
+Primary cause      : Unexpected severe clear air turbulence (CAT)
+Contributing factor: Inadequate PIREPs in the region
+SIGMET issued      : No active SIGMET at time of incident
+
+REGULATORY NOTIFICATIONS
+------------------------
+DGCA notified      : Yes, at 16:30 IST
+AAIB notified      : Yes, at 16:45 IST
+Insurance notified : Yes
+
+END OF REPORT

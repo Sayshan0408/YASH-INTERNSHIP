@@ -1,0 +1,8 @@
+streamlit>=1.32.0
+rouge-score>=0.1.2
+nltk>=3.8.1
+PyMuPDF>=1.23.0
+# Optional — needed for full BERTScore (large download ~500MB)
+# bert-score>=0.3.13
+# torch>=2.0.0
+# transformers>=4.30.0
